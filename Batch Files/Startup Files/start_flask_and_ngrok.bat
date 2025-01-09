@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\kyf_achworks\Desktop\New Projects\Greennote\Greennote_webhook>"
+cd /d "C:\Users\kyf_achworks\Desktop\New Projects\Greennote\greennote_webhook>"
 
 call venv\Scripts\activate
 
