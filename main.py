@@ -40,7 +40,6 @@ def restrict_access():
 @app.route('/clear-search', methods=["POST"])
 def search_clear():
     params = request.get_json()
-    print(params)
 
     first_name = params.get('firstName')
     last_name = params.get('lastName')
@@ -117,8 +116,6 @@ def search_clear():
             pkcs12_password=cert_pass
         )
 
-        print(clear_post.status_code)
-        print(clear_post.text)
         if clear_post.status_code != 200:
             root = ET.fromstring(clear_post.text)
             error_message = root.find('.//Message').text if root.find('.//Message') is not None else "Unknown Error"
@@ -142,8 +139,6 @@ def search_clear():
             pkcs12_filename=cert_path,
             pkcs12_password=cert_pass
         )
-
-        print(get_results.status_code)
 
         if get_results.status_code != 200:
             return jsonify({'error': "Failed to fetch phone search results"}), get_results.status_code
