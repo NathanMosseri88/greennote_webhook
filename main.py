@@ -162,12 +162,49 @@ def person_search_clear():
             relevance = group.find('.//Relevance').text
             dominant_values = group.find('.//DominantValues/ns2:PersonDominantValues', namespaces)
             if dominant_values is not None:
-                phone_number = dominant_values.find('.//PhoneNumber').text
+                phone_number = dominant_values.find('.//PhoneNumber')
+
+                name_root = dominant_values.find('.//Name')
+                if name_root:
+                    firstname = name_root.find('.//FirstName')
+                    lastname = name_root.find('.//LastName')
+                    middlename = name_root.find('.//MiddleName')
+                    fullname = name_root.find('.//FullName')
+
+                social_num = dominant_values.find('.//SSN')
+
+                age_root = dominant_values.find('.//AgeInfo')
+                if age_root:
+                    birthday = age_root.find('.//PersonBirthDate')
+                    age = age_root.find('.//PersonAge')
+
+                address_root = dominant_values.find('.//Address')
+                if address_root:
+                    street = address_root.find('.//Street')
+                    city = address_root.find('.//City')
+                    state = address_root.find('.//State')
+                    zip_code = address_root.find('.//ZipCode')
+                    country = address_root.find('.//Country')
+                    address_reported_date = address_root.find('.//ReportedDate')
+
                 results.append({
-                    "phone_number": phone_number,
                     "relevance": relevance,
                     "group_id": group_id,
-                    "search_id": uri.split('/')[-1]
+                    "search_id": uri.split('/')[-1],
+                    "phone_number": phone_number.text if phone_number else '',
+                    "first_name": firstname.text if firstname else '',
+                    "last_name": lastname.text if lastname else '',
+                    "middle_name": middlename.text if middlename else '',
+                    "full_name": fullname.text if fullname else '',
+                    "social": social_num.text if social_num else '',
+                    "birthday": birthday.text if birthday else '',
+                    "age": age.text if age else '',
+                    "street": street.text if street else '',
+                    "city": city.text if city else '',
+                    "state": state.text if state else '',
+                    "zip": zip_code.text if zip_code else '',
+                    "country": country.text if country else '',
+                    "address_reported_date": address_reported_date.text if address_reported_date else ''
                 })
 
         sorted_results = sorted(results, key=lambda x: x['relevance'], reverse=True)
