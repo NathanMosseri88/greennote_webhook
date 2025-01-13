@@ -151,61 +151,82 @@ def person_search_clear():
         # Parse the results XML to extract phone numbers and relevance scores
         results_root = ET.fromstring(get_results.text)
         namespaces = {
-            'ns2': 'com/thomsonreuters/schemas/search',
-            'ns5': 'http://clear.thomsonreuters.com/api/search/2.0'
+            'ns2': 'com/thomsonreuters/schemas/common-data',
+            'ns3': 'com/thomsonreuters/schemas/search',
+            'ns4': 'http://clear.thomsonreuters.com/api/search/2.0',
+            'ns5': 'com/thomsonreuters/schemas/globalbeneficialownership-search'
         }
+
         result_groups = results_root.findall('.//ResultGroup', namespaces)
         results = []
 
         for group in result_groups:
-            group_id = group.find('.//GroupId').text
-            relevance = group.find('.//Relevance').text
-            dominant_values = group.find('.//DominantValues/ns2:PersonDominantValues', namespaces)
+            group_id = group.find('.//GroupId').text if group.find('.//GroupId') else ''
+            relevance = group.find('.//Relevance').text if group.find('.//Relevance') else ''
+            dominant_values = group.find('.//DominantValues/ns3:PersonDominantValues', namespaces)
+
+            # Initialize fields with default values
+            phone_number = firstname = lastname = middlename = fullname = ''
+            social_num = birthday = age = ''
+            street = city = state = zip_code = country = address_reported_date = ''
+
             if dominant_values is not None:
-                phone_number = dominant_values.find('.//PhoneNumber')
+                phone_number = dominant_values.find('.//ns3:PhoneNumber', namespaces)
+                phone_number = phone_number.text if phone_number else ''
 
-                name_root = dominant_values.find('.//Name')
+                name_root = dominant_values.find('.//ns3:Name', namespaces)
                 if name_root:
-                    firstname = name_root.find('.//FirstName')
-                    lastname = name_root.find('.//LastName')
-                    middlename = name_root.find('.//MiddleName')
-                    fullname = name_root.find('.//FullName')
+                    firstname = name_root.find('.//ns3:FirstName', namespaces)
+                    lastname = name_root.find('.//ns3:LastName', namespaces)
+                    middlename = name_root.find('.//ns3:MiddleName', namespaces)
+                    fullname = name_root.find('.//ns3:FullName', namespaces)
 
-                social_num = dominant_values.find('.//SSN')
+                social_num = dominant_values.find('.//ns3:SSN', namespaces)
+                social_num = social_num.text if social_num else ''
 
-                age_root = dominant_values.find('.//AgeInfo')
+                age_root = dominant_values.find('.//ns3:AgeInfo', namespaces)
                 if age_root:
-                    birthday = age_root.find('.//PersonBirthDate')
-                    age = age_root.find('.//PersonAge')
+                    birthday = age_root.find('.//ns3:PersonBirthDate', namespaces)
+                    birthday = birthday.text if birthday else ''
+                    age = age_root.find('.//ns3:PersonAge', namespaces)
+                    age = age.text if age else ''
 
-                address_root = dominant_values.find('.//Address')
+                address_root = dominant_values.find('.//ns3:Address', namespaces)
                 if address_root:
-                    street = address_root.find('.//Street')
-                    city = address_root.find('.//City')
-                    state = address_root.find('.//State')
-                    zip_code = address_root.find('.//ZipCode')
-                    country = address_root.find('.//Country')
-                    address_reported_date = address_root.find('.//ReportedDate')
+                    street = address_root.find('.//ns3:Street', namespaces)
+                    city = address_root.find('.//ns3:City', namespaces)
+                    state = address_root.find('.//ns3:State', namespaces)
+                    zip_code = address_root.find('.//ns3:ZipCode', namespaces)
+                    country = address_root.find('.//ns3:Country', namespaces)
+                    address_reported_date = address_root.find('.//ns3:ReportedDate', namespaces)
 
-                results.append({
-                    "relevance": relevance,
-                    "group_id": group_id,
-                    "search_id": uri.split('/')[-1],
-                    "phone_number": phone_number.text if phone_number else '',
-                    "first_name": firstname.text if firstname else '',
-                    "last_name": lastname.text if lastname else '',
-                    "middle_name": middlename.text if middlename else '',
-                    "full_name": fullname.text if fullname else '',
-                    "social": social_num.text if social_num else '',
-                    "birthday": birthday.text if birthday else '',
-                    "age": age.text if age else '',
-                    "street": street.text if street else '',
-                    "city": city.text if city else '',
-                    "state": state.text if state else '',
-                    "zip": zip_code.text if zip_code else '',
-                    "country": country.text if country else '',
-                    "address_reported_date": address_reported_date.text if address_reported_date else ''
-                })
+                    # Extract text safely
+                    street = street.text if street else ''
+                    city = city.text if city else ''
+                    state = state.text if state else ''
+                    zip_code = zip_code.text if zip_code else ''
+                    country = country.text if country else ''
+                    address_reported_date = address_reported_date.text if address_reported_date else ''
+
+            results.append({
+                "relevance": relevance,
+                "group_id": group_id,
+                "search_id": uri.split('/')[-1],
+                "phone_number": phone_number,
+                "first_name": firstname.text if firstname else '',
+                "last_name": lastname.text if lastname else '',
+                "middle_name": middlename.text if middlename else '',
+                "full_name": fullname.text if fullname else '',
+                "social": social_num,
+                "birthday": birthday,
+                "age": age,
+                "street": street,
+                "city": city,
+                "state": state,
+                "zip": zip_code,
+                "country": country,
+                "address_reported_date": address_reported_date
+            })
 
         sorted_results = sorted(results, key=lambda x: x['relevance'], reverse=True)
         # Return the extracted data
