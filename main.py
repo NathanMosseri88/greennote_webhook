@@ -37,6 +37,145 @@ def restrict_access():
 #     return response
 
 
+@app.route('/clear-person-search', methods=["POST"])
+def person_search_clear():
+    params = request.get_json()
+
+    last_name = params.get('lastName')
+    social = params.get('social')
+
+    username = os.getenv("CLEAR_USERNAME")
+    password = os.getenv("CLEAR_PASSWORD")
+    cert_pass = os.getenv("CLEAR_CERT_PASS")
+    cert_path = os.getenv("CLEAR_CERT_PATH")
+
+    url = 'https://s2s.thomsonreuters.com/api/v3/person/searchResults'
+
+    xml_body = f"""
+        <ps:PersonSearchRequestV3 xmlns:ps="http://clear.thomsonreuters.com/api/search/2.0">
+          <PermissiblePurpose>
+            <GLB>B</GLB>
+            <DPPA>3</DPPA>
+            <VOTER>7</VOTER>
+          </PermissiblePurpose>
+          <Reference>S2S Person Search</Reference>
+          <Criteria>
+            <p1:PersonCriteria xmlns:p1="com/thomsonreuters/schemas/search">
+              <NameInfo>
+                <AdvancedNameSearch>
+                  <LastSecondaryNameSoundSimilarOption>false</LastSecondaryNameSoundSimilarOption>
+                  <SecondaryLastNameOption>OR</SecondaryLastNameOption>
+                  <FirstNameBeginsWithOption>false</FirstNameBeginsWithOption>
+                  <FirstNameSoundSimilarOption>false</FirstNameSoundSimilarOption>
+                  <FirstNameExactMatchOption>false</FirstNameExactMatchOption>
+                </AdvancedNameSearch>
+                <LastName>{last_name}</LastName>
+                <FirstName></FirstName>
+                <MiddleInitial></MiddleInitial>
+                <SecondaryLastName></SecondaryLastName>
+              </NameInfo>
+              <AddressInfo>
+                <StreetNamesSoundSimilarOption>false</StreetNamesSoundSimilarOption>
+                <Street></Street>
+                <City></City>
+                <State></State>
+                <County></County>
+                <ZipCode></ZipCode>
+                <Province></Province>
+                <Country></Country>
+              </AddressInfo>
+              <EmailAddress></EmailAddress>
+              <NPINumber></NPINumber>
+              <SSN>{social}</SSN>
+              <PhoneNumber></PhoneNumber>
+              <AgeInfo>
+                <PersonBirthDate></PersonBirthDate>
+                <PersonAgeTo></PersonAgeTo>
+                <PersonAgeFrom></PersonAgeFrom>
+              </AgeInfo>
+              <DriverLicenseNumber></DriverLicenseNumber>
+              <WorldCheckUniqueId></WorldCheckUniqueId>
+            </p1:PersonCriteria>
+          </Criteria>
+          <Datasources>
+            <PublicRecordPeople>true</PublicRecordPeople>
+            <NPIRecord>true</NPIRecord>
+            <WorldCheckRiskIntelligence>true</WorldCheckRiskIntelligence>
+          </Datasources>
+        </ps:PersonSearchRequestV3>
+    """
+
+    headers = {
+        "Content-Type": "application/xml",
+        "Accept": "application/xml"
+    }
+
+    try:
+        # Send POST request
+        clear_post = requests_pkcs12.post(
+            url,
+            data=xml_body,
+            headers=headers,
+            auth=HTTPBasicAuth(username, password),
+            pkcs12_filename=cert_path,
+            pkcs12_password=cert_pass
+        )
+
+        if clear_post.status_code != 200:
+            root = ET.fromstring(clear_post.text)
+            error_message = root.find('.//Message').text if root.find('.//Message') is not None else "Unknown Error"
+            return jsonify({'error': error_message}), clear_post.status_code
+
+        # Parse the response to extract the URI
+        root = ET.fromstring(clear_post.text)
+        group_count_element = root.find('.//GroupCount')
+        group_count = int(group_count_element.text) if group_count_element is not None else 0
+        if group_count == 0:
+            logging.info("No results found")
+            return jsonify({"message": "No results found."}), 204
+
+        uri = root.find('.//Uri').text
+
+        # Fetch the results using the extracted URI
+        get_results = requests_pkcs12.get(
+            uri,
+            headers={'Accept': 'application/xml'},
+            auth=HTTPBasicAuth(username, password),
+            pkcs12_filename=cert_path,
+            pkcs12_password=cert_pass
+        )
+        print(get_results.text)
+        if get_results.status_code != 200:
+            return jsonify({'error': "Failed to fetch phone search results"}), get_results.status_code
+
+        # Parse the results XML to extract phone numbers and relevance scores
+        results_root = ET.fromstring(get_results.text)
+        namespaces = {
+            'ns2': 'com/thomsonreuters/schemas/search',
+            'ns5': 'http://clear.thomsonreuters.com/api/search/2.0'
+        }
+        result_groups = results_root.findall('.//ResultGroup', namespaces)
+        results = []
+
+        for group in result_groups:
+            relevance = group.find('.//Relevance').text
+            dominant_values = group.find('.//DominantValues/ns2:PhoneDominantValues', namespaces)
+            if dominant_values is not None:
+                phone_number = dominant_values.find('.//PhoneNumber').text
+                results.append({
+                    "phone_number": phone_number,
+                    "relevance": relevance
+                })
+
+        sorted_results = sorted(results, key=lambda x: x['relevance'], reverse=True)
+        # Return the extracted data
+        return jsonify(sorted_results), 200
+
+    except Exception as e:
+        logging.error(f"Post Request failed: {e}")
+        return jsonify({'error': 'An Internal server error occurred'}), 500
+
+
 @app.route('/clear-search', methods=["POST"])
 def search_clear():
     params = request.get_json()
