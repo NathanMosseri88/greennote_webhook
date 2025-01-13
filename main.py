@@ -146,7 +146,7 @@ def person_search_clear():
         )
         print(get_results.text)
         if get_results.status_code != 200:
-            return jsonify({'error': "Failed to fetch phone search results"}), get_results.status_code
+            return jsonify({'error': "Failed to fetch person search results"}), get_results.status_code
 
         # Parse the results XML to extract phone numbers and relevance scores
         results_root = ET.fromstring(get_results.text)
@@ -158,13 +158,16 @@ def person_search_clear():
         results = []
 
         for group in result_groups:
+            group_id = group.find('.//GroupId').text
             relevance = group.find('.//Relevance').text
-            dominant_values = group.find('.//DominantValues/ns2:PhoneDominantValues', namespaces)
+            dominant_values = group.find('.//DominantValues/ns2:PersonDominantValues', namespaces)
             if dominant_values is not None:
                 phone_number = dominant_values.find('.//PhoneNumber').text
                 results.append({
                     "phone_number": phone_number,
-                    "relevance": relevance
+                    "relevance": relevance,
+                    "group_id": group_id,
+                    "search_id": uri.split('/')[-1]
                 })
 
         sorted_results = sorted(results, key=lambda x: x['relevance'], reverse=True)
