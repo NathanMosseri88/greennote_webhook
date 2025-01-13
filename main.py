@@ -99,8 +99,8 @@ def person_search_clear():
           </Criteria>
           <Datasources>
             <PublicRecordPeople>true</PublicRecordPeople>
-            <NPIRecord>true</NPIRecord>
-            <WorldCheckRiskIntelligence>true</WorldCheckRiskIntelligence>
+            <NPIRecord>false</NPIRecord>
+            <WorldCheckRiskIntelligence>false</WorldCheckRiskIntelligence>
           </Datasources>
         </ps:PersonSearchRequestV3>
     """
