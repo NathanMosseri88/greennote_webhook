@@ -144,7 +144,6 @@ def person_search_clear():
             pkcs12_filename=cert_path,
             pkcs12_password=cert_pass
         )
-        print(get_results.text)
         if get_results.status_code != 200:
             return jsonify({'error': "Failed to fetch person search results"}), get_results.status_code
 
@@ -197,8 +196,7 @@ def person_search_clear():
                     pkcs12_filename=cert_path,
                     pkcs12_password=cert_pass
                 )
-                print("\n Group Result:\n")
-                print(get_contacts.text)
+
                 if get_contacts.status_code != 200:
                     return jsonify({'error': 'Failed to fetch contact results'}), get_contacts.status_code
 
