@@ -204,11 +204,25 @@ def person_search_clear():
 
                 contacts_root = ET.fromstring(get_contacts.text)
 
+                unique_phone_numbers = set()
+
+                all_phones = contacts_root.findall('.//Phones', namespaces)
+                for phones in all_phones:
+                    phone_number = phones.find('.//PhoneNumber')
+                    phone_type = phones.find('.//PhoneNumberType')
+                    if phone_number is not None and phone_type is not None:
+                        unique_phone_numbers.add((phone_number.text, phone_type.text))
+
+                unique_phone_numbers_list = [
+                    {"number": number, "type": type}
+                    for number, type in unique_phone_numbers
+                ]
+
                 results.append({
                     "relevance": relevance,
                     "group_id": group_id,
                     "search_id": uri.split('/')[-1],
-                    "phone_number": phone_number.text if phone_number is not None else '',
+                    "phone_number": unique_phone_numbers_list,
                     "first_name": firstname.text if firstname is not None else '',
                     "last_name": lastname.text if lastname is not None else '',
                     "middle_name": middlename.text if middlename is not None else '',
