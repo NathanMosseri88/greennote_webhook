@@ -190,6 +190,19 @@ def person_search_clear():
                     country = address_root.find('.//Country')
                     address_reported_date = address_root.find('.//ReportedDate')
 
+                get_contacts = requests_pkcs12.get(
+                    f"{uri}/{group_id}",
+                    headers={'Accept': 'application/xml'},
+                    auth=HTTPBasicAuth(username, password),
+                    pkcs12_filename=cert_path,
+                    pkcs12_password=cert_pass
+                )
+                print(get_contacts.text)
+                if get_contacts.status_code != 200:
+                    return jsonify({'error': 'Failed to fetch contact results'}), get_contacts.status_code
+
+                contacts_root = ET.fromstring(get_contacts.text)
+
                 results.append({
                     "relevance": relevance,
                     "group_id": group_id,
