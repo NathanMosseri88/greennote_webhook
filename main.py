@@ -157,83 +157,61 @@ def person_search_clear():
             'ns5': 'com/thomsonreuters/schemas/globalbeneficialownership-search'
         }
 
-        result_groups = results_root.findall('.//ns4:ResultGroup', namespaces)
+        result_groups = results_root.findall('.//ResultGroup', namespaces)
         results = []
 
         for group in result_groups:
-            group_id = group.find('./ns4:GroupId', namespaces).text if group.find('./ns4:GroupId', namespaces) else ''
-            relevance = group.find('./ns4:Relevance', namespaces).text if group.find('./ns4:Relevance',
-                                                                                     namespaces) else ''
-            dominant_values = group.find('./ns4:DominantValues/ns3:PersonDominantValues', namespaces)
-
-            # Initialize fields
-            phone_number = firstname = lastname = middlename = fullname = ''
-            social_num = birthday = age = ''
-            street = city = state = zip_code = country = address_reported_date = ''
-
+            group_id = group.find('.//GroupId', namespaces).text
+            relevance = group.find('.//Relevance', namespaces).text
+            dominant_values = group.find('.//DominantValues/ns3:PersonDominantValues', namespaces)
             if dominant_values is not None:
-                phone_number_elem = dominant_values.find('./ns3:PhoneNumber', namespaces)
-                phone_number = phone_number_elem.text if phone_number_elem else ''
+                phone_number = dominant_values.find('.//PhoneNumber')
 
-                name_root = dominant_values.find('./ns3:Name', namespaces)
+                name_root = dominant_values.find('.//Name')
                 if name_root:
-                    firstname = name_root.find('./ns3:FirstName', namespaces)
-                    lastname = name_root.find('./ns3:LastName', namespaces)
-                    middlename = name_root.find('./ns3:MiddleName', namespaces)
-                    fullname = name_root.find('./ns3:FullName', namespaces)
+                    firstname = name_root.find('.//FirstName')
+                    lastname = name_root.find('.//LastName')
+                    middlename = name_root.find('.//MiddleName')
+                    fullname = name_root.find('.//FullName')
 
-                firstname = firstname.text if firstname else ''
-                lastname = lastname.text if lastname else ''
-                middlename = middlename.text if middlename else ''
-                fullname = fullname.text if fullname else ''
+                social_num = dominant_values.find('.//SSN')
 
-                social_num_elem = dominant_values.find('./ns3:SSN', namespaces)
-                social_num = social_num_elem.text if social_num_elem else ''
-
-                age_root = dominant_values.find('./ns3:AgeInfo', namespaces)
+                age_root = dominant_values.find('.//AgeInfo')
                 if age_root:
-                    birthday_elem = age_root.find('./ns3:PersonBirthDate', namespaces)
-                    birthday = birthday_elem.text if birthday_elem else ''
-                    age_elem = age_root.find('./ns3:PersonAge', namespaces)
-                    age = age_elem.text if age_elem else ''
+                    birthday = age_root.find('.//PersonBirthDate')
+                    age = age_root.find('.//PersonAge')
 
-                address_root = dominant_values.find('./ns3:Address', namespaces)
+                address_root = dominant_values.find('.//Address')
                 if address_root:
-                    street_elem = address_root.find('./ns3:Street', namespaces)
-                    city_elem = address_root.find('./ns3:City', namespaces)
-                    state_elem = address_root.find('./ns3:State', namespaces)
-                    zip_elem = address_root.find('./ns3:ZipCode', namespaces)
-                    country_elem = address_root.find('./ns3:Country', namespaces)
-                    reported_date_elem = address_root.find('./ns3:ReportedDate', namespaces)
+                    street = address_root.find('.//Street')
+                    city = address_root.find('.//City')
+                    state = address_root.find('.//State')
+                    zip_code = address_root.find('.//ZipCode')
+                    country = address_root.find('.//Country')
+                    address_reported_date = address_root.find('.//ReportedDate')
 
-                    street = street_elem.text if street_elem else ''
-                    city = city_elem.text if city_elem else ''
-                    state = state_elem.text if state_elem else ''
-                    zip_code = zip_elem.text if zip_elem else ''
-                    country = country_elem.text if country_elem else ''
-                    address_reported_date = reported_date_elem.text if reported_date_elem else ''
-
-            results.append({
-                "relevance": relevance,
-                "group_id": group_id,
-                "search_id": uri.split('/')[-1],
-                "phone_number": phone_number,
-                "first_name": firstname,
-                "last_name": lastname,
-                "middle_name": middlename,
-                "full_name": fullname,
-                "social": social_num,
-                "birthday": birthday,
-                "age": age,
-                "street": street,
-                "city": city,
-                "state": state,
-                "zip": zip_code,
-                "country": country,
-                "address_reported_date": address_reported_date
-            })
+                results.append({
+                    "relevance": relevance,
+                    "group_id": group_id,
+                    # "search_id": uri.split('/')[-1],
+                    "phone_number": phone_number.text if phone_number is not None else '',
+                    "first_name": firstname.text if firstname is not None else '',
+                    "last_name": lastname.text if lastname is not None else '',
+                    "middle_name": middlename.text if middlename is not None else '',
+                    "full_name": fullname.text if fullname is not None else '',
+                    "social": social_num.text if social_num is not None else '',
+                    "birthday": birthday.text if birthday is not None else '',
+                    "age": age.text if age is not None else '',
+                    "street": street.text if street is not None else '',
+                    "city": city.text if city is not None else '',
+                    "state": state.text if state is not None else '',
+                    "zip": zip_code.text if zip_code is not None else '',
+                    "country": country.text if country is not None else '',
+                    "address_reported_date": address_reported_date.text if address_reported_date is not None else ''
+                })
 
         sorted_results = sorted(results, key=lambda x: x['relevance'], reverse=True)
+        # Return the extracted data
         return jsonify(sorted_results), 200
 
     except Exception as e:
