@@ -168,7 +168,7 @@ def person_search_clear():
                 phone_number = dominant_values.find('.//PhoneNumber')
 
                 name_root = dominant_values.find('.//Name')
-                if name_root:
+                if name_root is not None:
                     firstname = name_root.find('.//FirstName')
                     lastname = name_root.find('.//LastName')
                     middlename = name_root.find('.//MiddleName')
@@ -177,12 +177,12 @@ def person_search_clear():
                 social_num = dominant_values.find('.//SSN')
 
                 age_root = dominant_values.find('.//AgeInfo')
-                if age_root:
+                if age_root is not None:
                     birthday = age_root.find('.//PersonBirthDate')
                     age = age_root.find('.//PersonAge')
 
                 address_root = dominant_values.find('.//Address')
-                if address_root:
+                if address_root is not None:
                     street = address_root.find('.//Street')
                     city = address_root.find('.//City')
                     state = address_root.find('.//State')
@@ -193,7 +193,7 @@ def person_search_clear():
                 results.append({
                     "relevance": relevance,
                     "group_id": group_id,
-                    # "search_id": uri.split('/')[-1],
+                    "search_id": uri.split('/')[-1],
                     "phone_number": phone_number.text if phone_number is not None else '',
                     "first_name": firstname.text if firstname is not None else '',
                     "last_name": lastname.text if lastname is not None else '',
